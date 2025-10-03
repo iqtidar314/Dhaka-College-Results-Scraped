@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
+<!--  created with Free Online Sitemap Generator www.xml-sitemaps.com  -->
+<url>xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+
+<loc>https://dcresultsscraped.onrender.com/</loc>
+<lastmod>2024-11-29T15:51:46+00:00</lastmod>
+<priority>1.00</priority>
+<changefreq>weekly</changefreq>
+</url>
+<url>
+<loc>https://dcresultsscraped.onrender.com/about-me/</loc>
+<lastmod>2024-11-29T15:51:46+00:00</lastmod>
+<priority>0.80</priority>
+<changefreq>weekly</changefreq>
+</url>
+<url>
+<loc>https://dcresultsscraped.onrender.com/results/</loc>
+<lastmod>2024-11-29T15:51:46+00:00</lastmod>
+<priority>0.90</priority>
+</url>
+<url>
+<loc>https://dcresultsscraped.onrender.com/blog/</loc>
+<lastmod>2024-11-29T15:51:46+00:00</lastmod>
+<priority>0.80</priority>
+<changefreq>weekly</changefreq>
+</url>
+<url>
+<loc>https://dcresultsscraped.onrender.com/about-dhaka-college/</loc>
+<lastmod>2024-11-29T15:51:46+00:00</lastmod>
+<priority>0.80</priority>
+</url>
+<url>
+<loc>https://dcresultsscraped.onrender.com/privacy-policy/</loc>
+<lastmod>2024-11-29T15:51:46+00:00</lastmod>
+<priority>0.80</priority>
+<changefreq>weekly</changefreq>
+</url>
+
+<url>
+  <loc>https://dcresultsscraped.onrender.com/will-be-added-soon/</loc>
+  <lastmod>2024-11-29</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.1</priority>
+</url>
+
+
+
+</urlset>
