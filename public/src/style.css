@@ -1174,7 +1174,6 @@ ul {
 
 
 .containerprofile {
-  min-height: 70vh;
   max-width: 300px;
   box-shadow: 0 10px 20px black;
   background-size: cover;
@@ -1241,8 +1240,6 @@ padding-bottom:20px;
   font-size: 1.1rem;
   background:var(--footer-bg);
   margin-bottom: auto;
-  
-  
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
@@ -1257,12 +1254,11 @@ padding-bottom:20px;
   align-items: center;
 }
 .containerprofile .flex-center {
+padding-bottom: 25px; ;
 width: 100%;
 min-height: 7vh;
 font-size: 0.7rem;
 background:var(--footer-bg);
-
-
 display: -webkit-box;
 display: -webkit-flex;
 display: -ms-flexbox;
