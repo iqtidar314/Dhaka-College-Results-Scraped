@@ -19,7 +19,7 @@ app.use((req, res, next) => {
 app.post('/verify-password', (req, res) => {
     const { password } = req.body;
     console.log('Password verification request received');
-    
+
     if (password === "dcstudent") {
         console.log('Password verification: SUCCESS');
         res.json({ success: true });
@@ -31,9 +31,9 @@ app.post('/verify-password', (req, res) => {
 
 // Results list endpoint
 app.get('/results-list', (req, res) => {
-    const resultsDir = path.join(__dirname, 'public',  'results-file');
+    const resultsDir = path.join(__dirname, 'public', 'results-file');
     console.log('Reading results directory:', resultsDir);
-    
+
     try {
         const files = fs.readdirSync(resultsDir);
         const jsonFiles = files.filter(file => file.endsWith('.json'));
@@ -47,7 +47,7 @@ app.get('/results-list', (req, res) => {
 
 // Serve result-view directly
 app.get('/result-view', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'results','result-view', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'result-view', 'index.html'));
 });
 
 app.listen(PORT, () => {

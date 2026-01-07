@@ -79,13 +79,13 @@ function handleSort() {
             return { roll: r, name: s.name, raw, normalized: normalizeForSort(raw, currentSort) };
         });
         console.log(`Sorted by ${currentSort} (${sortDirection}) — top entries:`, top);
-    } catch(e) { /* ignore debug errors */ }
+    } catch (e) { /* ignore debug errors */ }
 }
 
 // helper used by sorter & debug
 function normalizeForSort(raw, field) {
     // fields considered numeric
-    const numericFields = ['roll', 'gpa', 'totalMark', 'Rank', 'section'];
+    const numericFields = ['roll', 'gpa', 'gpaWithoutAdditional', 'totalMark', 'Rank', 'section'];
     const isSubject = allSubjects.includes(field);
     const isNumeric = isSubject || numericFields.includes(field);
 
@@ -111,7 +111,7 @@ function normalizeForSort(raw, field) {
     // numeric fields: try parse (drop commas)
     if (isNumeric) {
         // remove commas and percent sign if present
-        const cleaned = s.replace(/,/g, '').replace('%','');
+        const cleaned = s.replace(/,/g, '').replace('%', '');
         const n = parseFloat(cleaned);
         return Number.isFinite(n) ? n : null; // non-numeric text -> null (bottom)
     }
@@ -121,7 +121,7 @@ function normalizeForSort(raw, field) {
 }
 function sortEntries(entries, field, direction = 'asc') {
     const isSubject = allSubjects.includes(field);
-    const numericFields = ['roll', 'gpa', 'totalMark', 'global', 'section'];
+    const numericFields = ['roll', 'gpa', 'gpaWithoutAdditional', 'totalMark', 'global', 'section'];
     const isNumericField = (f) => isSubject || numericFields.includes(f);
     const dir = (direction === 'desc') ? 'desc' : 'asc';
 
@@ -145,7 +145,7 @@ function sortEntries(entries, field, direction = 'asc') {
         if (alwaysBottom.has(sLow)) return null;
 
         if (numeric) {
-            const cleaned = s.replace(/,/g, '').replace('%','');
+            const cleaned = s.replace(/,/g, '').replace('%', '');
             const n = parseFloat(cleaned);
             return Number.isFinite(n) ? n : null;
         }
@@ -163,6 +163,7 @@ function sortEntries(entries, field, direction = 'asc') {
                 case 'roll': rawA = a.roll; rawB = b.roll; break;
                 case 'name': rawA = a.name; rawB = b.name; break;
                 case 'gpa': rawA = a.gpa; rawB = b.gpa; break;
+                case 'gpaWithoutAdditional': rawA = a.gpaWithoutAdditional; rawB = b.gpaWithoutAdditional; break;
                 case 'totalMark': rawA = a.totalMark; rawB = b.totalMark; break;
                 case 'global': rawA = a.ranking?.global; rawB = b.ranking?.global; break;
                 case 'section': rawA = a.ranking?.section; rawB = b.ranking?.section; break;
@@ -220,18 +221,18 @@ function getHighlightClass(value, type, subject = null) {
 
     if (type === 'cq') {
         if (value === 'A') return 'warning';
-        if (parseFloat(value) < subNumber/2) return 'danger';
-        if (parseFloat(value) > subNumber*0.8) return 'good';
+        if (parseFloat(value) < subNumber / 2) return 'danger';
+        if (parseFloat(value) > subNumber * 0.8) return 'good';
     }
 
     if (type === 'mcq') {
-        if (parseFloat(value) < (subNumber/4)/2) return 'danger';
-        if (parseFloat(value) > (subNumber/4)*0.8) return 'good';
+        if (parseFloat(value) < (subNumber / 4) / 2) return 'danger';
+        if (parseFloat(value) > (subNumber / 4) * 0.8) return 'good';
     }
 
     if (type === 'prac') {
-        if (parseFloat(value) < (subNumber/4)/2) return 'danger';
-        if (parseFloat(value) > (subNumber/4)*0.8) return 'good';
+        if (parseFloat(value) < (subNumber / 4) / 2) return 'danger';
+        if (parseFloat(value) > (subNumber / 4) * 0.8) return 'good';
     }
 
     return '';
@@ -287,7 +288,7 @@ async function loadData() {
 function processData() {
     cleanData = {};
     allSubjects = new Set();
-    
+
     studentsData.forEach(student => {
         const roll = student.roll.toString();
         // inside processData(), when creating cleanData[roll]
@@ -298,6 +299,7 @@ function processData() {
             status: student.status || 'qualified',
             // keep numeric fields null when missing so sort can push them down
             gpa: (student.gpa !== undefined && student.gpa !== null && student.gpa !== '') ? Number(student.gpa) : null,
+            gpaWithoutAdditional: (student.gpaWithoutAdditional !== undefined && student.gpaWithoutAdditional !== null && student.gpaWithoutAdditional !== '') ? Number(student.gpaWithoutAdditional) : null,
             totalMark: (student.totalMark !== undefined && student.totalMark !== null && student.totalMark !== '') ? Number(student.totalMark) : null,
             ranking: {
                 global: (student.Ranking && student.Ranking.global !== undefined && student.Ranking.global !== null && student.Ranking.global !== '') ? Number(student.Ranking.global) : null,
@@ -307,11 +309,11 @@ function processData() {
             subjects: {},
             optionalSubject: student.optionalSubject || null
         };
-        
-        
+
+
         // Process subjects
         Object.keys(student).forEach(key => {
-            if (typeof student[key] === 'object' && student[key] !== null && 
+            if (typeof student[key] === 'object' && student[key] !== null &&
                 !['Ranking'].includes(key) && student[key].termTotal !== undefined) {
                 allSubjects.add(key);
                 // when populating cleanData[roll].subjects[subjectName]...
@@ -323,11 +325,11 @@ function processData() {
                     grade: student[key].grade ?? 'F',
                     gp: (student[key].gp !== undefined && student[key].gp !== null && student[key].gp !== '') ? parseFloat(student[key].gp) : null
                 };
-                
+
             }
         });
     });
-    
+
     allSubjects = Array.from(allSubjects);
 }
 
@@ -339,14 +341,14 @@ function setupEventListeners() {
     const searchButton = document.getElementById('searchButton');
     const sortSelect = document.getElementById('sortSelect');
     const compactToggle = document.getElementById('compactToggle');
-    
+
     // search only when button is clicked
     searchButton.addEventListener('click', () => {
         handleSearch(searchInput.value.trim());
     });
     sortSelect.addEventListener('change', handleSort);
     compactToggle.addEventListener('change', handleCompactToggle);
-    
+
     // ❌ REMOVE THIS LINE:
     // populateSortOptions();
 }
@@ -354,15 +356,17 @@ function setupEventListeners() {
 function populateSortOptions() {
     const sortSelect = document.getElementById('sortSelect');
     sortSelect.innerHTML = '';
-    
+
     // Base options
     const baseOptions = [
         { value: 'roll|asc', label: '🚩Sort by Roll (Ascending)🚩' },
         { value: 'roll|desc', label: 'Sort by Roll (Descending)' },
         { value: 'name|asc', label: 'Sort by Name (A-Z)' },
         { value: 'name|desc', label: 'Sort by Name (Z-A)' },
-        { value: 'gpa|desc', label: 'Sort by GPA (High to Low)' },
-        { value: 'gpa|asc', label: 'Sort by GPA (Low to High)' },
+        { value: 'gpa|desc', label: 'Sort by GPA (with optional) (High to Low)' },
+        { value: 'gpa|asc', label: 'Sort by GPA (with optional) (Low to High)' },
+        { value: 'gpaWithoutAdditional|desc', label: 'Sort by GPA (High to Low)' },
+        { value: 'gpaWithoutAdditional|asc', label: 'Sort by GPA (Low to High)' },
         { value: 'totalMark|desc', label: 'Sort by Total Marks (High to Low)' },
         { value: 'totalMark|asc', label: 'Sort by Total Marks (Low to High)' },
         { value: 'global|asc', label: '🚩Sort by Overall Rank (Best to Worst)🚩' },
@@ -370,29 +374,29 @@ function populateSortOptions() {
         { value: 'section|asc', label: 'Sort by Section Rank (Best to Worst)' },
         { value: 'section|desc', label: 'Sort by Section Rank (Worst to Best)' }
     ];
-    
+
     baseOptions.forEach(opt => {
         const option = document.createElement('option');
         option.value = opt.value;
         option.textContent = opt.label;
         sortSelect.appendChild(option);
     });
-    
+
     // Add subject options dynamically
     if (allSubjects.length > 0) {
         const divider = document.createElement('option');
         divider.disabled = true;
         divider.textContent = '───── Subjects ─────';
         sortSelect.appendChild(divider);
-        
+
         allSubjects.forEach(subject => {
             const subjectName = subject.charAt(0).toUpperCase() + subject.slice(1);
-            
+
             const optionDesc = document.createElement('option');
             optionDesc.value = `${subject}|desc`;
             optionDesc.textContent = `Sort by ${subjectName} (High to Low)`;
             sortSelect.appendChild(optionDesc);
-            
+
             const optionAsc = document.createElement('option');
             optionAsc.value = `${subject}|asc`;
             optionAsc.textContent = `Sort by ${subjectName} (Low to High)`;
@@ -408,7 +412,7 @@ function handleCompactToggle() {
     isCompactView = document.getElementById('compactToggle').checked;
     currentDetailSubject = null;
     currentDetailRow = null;
-    
+
     handleSort();
 }
 
@@ -423,9 +427,10 @@ function createTableHeader(header) {
         { key: 'global', label: 'Overall<br>Rank' },   // multiline
         { key: 'section', label: 'Section<br>Rank' }, // multiline
         { key: 'gpa', label: 'GPA' },
+        { key: 'gpaWithOptional', label: 'GPA<br>(with optional)' },
         { key: 'totalMark', label: 'Total' }
     ];
-    
+
     baseHeaders.forEach(col => {
         const th = document.createElement('th');
         th.innerHTML = col.label;  // ✅ use innerHTML instead of textContent
@@ -433,16 +438,16 @@ function createTableHeader(header) {
         th.style.textAlign = "center"; // looks cleaner
         header.appendChild(th);
     });
-    
-    
+
+
     // Subject columns
     allSubjects.forEach(subject => {
         const th = document.createElement('th');
         th.className = 'subject-header';
         th.onclick = () => toggleSubjectDetail(subject);
-        
+
         const subjectName = subject.charAt(0).toUpperCase() + subject.slice(1);
-        
+
         if (isCompactView && currentDetailSubject !== subject) {
             th.innerHTML = `${subjectName}<div class="detail-icon">+</div>`;
         } else if (!isCompactView || currentDetailSubject === subject) {
@@ -454,10 +459,10 @@ function createTableHeader(header) {
                 ${currentDetailSubject === subject ? '<div class="detail-icon">-</div>' : ''}
             `;
         }
-        
+
         header.appendChild(th);
     });
-    
+
     // Transcript column
     const transcriptTh = document.createElement('th');
     transcriptTh.textContent = 'Transcript';
@@ -467,34 +472,34 @@ function createTableHeader(header) {
 function createTableRow(body, student, index) {
     const tr = document.createElement('tr');
     const subNumber = 20;
-    
+
     // Toggle column
     const toggleTd = document.createElement('td');
     toggleTd.innerHTML = `<span class="row-toggle" onclick="toggleRowDetail(${student.roll})">${currentDetailRow === student.roll ? '-' : '+'}</span>`;
     tr.appendChild(toggleTd);
-    
+
     // Check if student is not qualified or absent
     const isNotQualified = student.status !== 'qualified';
-    
+
     if (isNotQualified) {
         // Roll column
         const rollTd = document.createElement('td');
         rollTd.textContent = student.roll;
         tr.appendChild(rollTd);
-        
+
         // Name column
         const nameTd = document.createElement('td');
         nameTd.textContent = student.name;
         tr.appendChild(nameTd);
-        
+
         // Status message spanning all columns
         const statusTd = document.createElement('td');
         const statusText = student.status === 'absent' ? 'ABSENT' : 'NOT QUALIFIED';
         statusTd.textContent = statusText;
         statusTd.className = student.status === 'absent' ? 'absent' : 'not-qualified';
-        statusTd.colSpan = allSubjects.length + 4;
+        statusTd.colSpan = allSubjects.length + 5;
         tr.appendChild(statusTd);
-        
+
         // Transcript column
         const transcriptTd = document.createElement('td');
         if (student.url) {
@@ -506,56 +511,68 @@ function createTableRow(body, student, index) {
         const rollTd = document.createElement('td');
         rollTd.textContent = student.roll;
         tr.appendChild(rollTd);
-        
+
         // Name
         const nameTd = document.createElement('td');
         nameTd.textContent = student.name;
         tr.appendChild(nameTd);
-        
+
         // Global Ranking - apply color based on GPA
         const globalTd = document.createElement('td');
         globalTd.textContent = student.ranking.global;
 
         tr.appendChild(globalTd);
         // Section Ranking
-const sectionTd = document.createElement('td');
+        const sectionTd = document.createElement('td');
 
-if (student.ranking.section !== null && student.section) {
-    sectionTd.textContent = `${student.ranking.section} (${student.section})`;
-} else {
-    sectionTd.textContent = '-';
-}
+        if (student.ranking.section !== null && student.section) {
+            sectionTd.textContent = `${student.ranking.section} (${student.section})`;
+        } else {
+            sectionTd.textContent = '-';
+        }
 
-tr.appendChild(sectionTd);
+        tr.appendChild(sectionTd);
 
-        
-        // GPA - apply color based on value
+
+        // GPA (Without Additional) - apply color based on value
         const gpaTd = document.createElement('td');
-        gpaTd.textContent = student.gpa.toFixed(2);
-        if (student.gpa === 0.00) {
+        const gpaVal = student.gpaWithoutAdditional !== null ? student.gpaWithoutAdditional : 0.00;
+        gpaTd.textContent = gpaVal.toFixed(2);
+        if (gpaVal === 0.00) {
             gpaTd.classList.add('text-danger');
-        } else if (student.gpa === 5.00) {
+        } else if (gpaVal === 5.00) {
             gpaTd.classList.add('text-good');
         }
         tr.appendChild(gpaTd);
-        
+
+        // GPA (With Optional)
+        const gpaOptionalTd = document.createElement('td');
+        const gpaOptVal = student.gpa !== null ? student.gpa : 0.00;
+        gpaOptionalTd.textContent = gpaOptVal.toFixed(2);
+        if (gpaOptVal === 0.00) {
+            gpaOptionalTd.classList.add('text-danger');
+        } else if (gpaOptVal === 5.00) {
+            gpaOptionalTd.classList.add('text-good');
+        }
+        tr.appendChild(gpaOptionalTd);
+
         // Total Mark
         const totalMarkTd = document.createElement('td');
         totalMarkTd.textContent = student.totalMark.toFixed(0);
         tr.appendChild(totalMarkTd);
-        
+
         // Subject columns
         allSubjects.forEach(subject => {
             const td = document.createElement('td');
             const subjectData = student.subjects[subject];
-            
+
             if (!subjectData) {
                 td.textContent = '-';
                 td.style.color = '#666';
             } else if (isCompactView && currentDetailSubject !== subject && currentDetailRow !== student.roll) {
                 // Compact view - show only termTotal
                 td.textContent = subjectData.termTotal;
-                
+
                 // Apply color based on grade
                 if (subjectData.grade === 'F') {
                     td.classList.add('text-danger');
@@ -568,13 +585,13 @@ tr.appendChild(sectionTd);
                 const mcqVal = subjectData.mcq || '-';
                 const pracVal = subjectData.practical || '-';
                 const totalVal = subjectData.termTotal || '-';
-                
+
                 // Determine colors for each component
                 let cqClass = '';
                 let mcqClass = '';
                 let pracClass = '';
                 let totalClass = '';
-                
+
                 // CQ coloring
                 if (cqVal !== '-' && cqVal !== 'A') {
                     const cqNum = parseFloat(cqVal);
@@ -588,7 +605,7 @@ tr.appendChild(sectionTd);
                 } else if (cqVal === 'A') {
                     cqClass = 'text-warning';
                 }
-                
+
                 // MCQ coloring
                 if (mcqVal !== '-') {
                     const mcqNum = parseFloat(mcqVal);
@@ -600,7 +617,7 @@ tr.appendChild(sectionTd);
                         }
                     }
                 }
-                
+
                 // Practical coloring
                 if (pracVal !== '-') {
                     const pracNum = parseFloat(pracVal);
@@ -612,14 +629,14 @@ tr.appendChild(sectionTd);
                         }
                     }
                 }
-                
+
                 // Total coloring based on grade
                 if (subjectData.grade === 'F') {
                     totalClass = 'text-danger';
                 } else if (subjectData.grade === 'A+') {
                     totalClass = 'text-good';
                 }
-                
+
                 td.innerHTML = `
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; font-size: 10px;">
                         <div class="${cqClass}">${cqVal}</div>
@@ -631,7 +648,7 @@ tr.appendChild(sectionTd);
             }
             tr.appendChild(td);
         });
-        
+
         // Transcript column
         const transcriptTd = document.createElement('td');
         if (student.url) {
@@ -639,22 +656,22 @@ tr.appendChild(sectionTd);
         }
         tr.appendChild(transcriptTd);
     }
-    
+
     body.appendChild(tr);
 }
 
 // Create empty row for padding
 function createEmptyRow(body, index) {
     const tr = document.createElement('tr');
-    const totalColumns = 7 + allSubjects.length + 1; // base columns + subjects + transcript
-    
+    const totalColumns = 8 + allSubjects.length + 1; // base columns (now 8) + subjects + transcript
+
     for (let i = 0; i < totalColumns; i++) {
         const td = document.createElement('td');
         td.innerHTML = '&nbsp;';
         td.style.height = '35px';
         tr.appendChild(td);
     }
-    
+
     body.appendChild(tr);
 }
 
@@ -666,7 +683,7 @@ function toggleSubjectDetail(subject) {
         currentDetailSubject = subject;
         currentDetailRow = null; // Reset row detail when subject detail is toggled
     }
-    
+
     handleSort();
 }
 
@@ -678,8 +695,15 @@ function toggleRowDetail(roll) {
         currentDetailRow = roll;
         currentDetailSubject = null; // Reset subject detail when row detail is toggled
     }
-    
+
     handleSort();
+}
+
+// Helper to select which GPA to use for analytics (for easy reversibility)
+function getGpaForAnalytics(student) {
+    // CURRENT: use gpaWithoutAdditional
+    // TO REVERSE: change to 'return student.gpa;'
+    return student.gpaWithoutAdditional !== null ? student.gpaWithoutAdditional : 0.00;
 }
 
 // Utility functions for analytics
@@ -688,9 +712,9 @@ function qualifiedCounter() {
 }
 
 function gradeCounter(subject, grade) {
-    return Object.values(cleanData).filter(student => 
-        student.status === 'qualified' && 
-        student.subjects[subject] && 
+    return Object.values(cleanData).filter(student =>
+        student.status === 'qualified' &&
+        student.subjects[subject] &&
         student.subjects[subject].grade === grade
     ).length;
 }
@@ -699,21 +723,21 @@ function gradeCounter(subject, grade) {
 function gradeCounterOverall(grade) {
     return Object.values(cleanData).filter(student => {
         if (student.status !== "qualified") return false;
-        return gpaToGrade(student.gpa) === grade;
+        return gpaToGrade(getGpaForAnalytics(student)) === grade;
     }).length;
 }
 function studentsQualifiedSubjectCounter(subject) {
-    qualified1 = Object.values(cleanData).filter(student => 
-        student.status === 'qualified' ||student.status === 'absent'
+    qualified1 = Object.values(cleanData).filter(student =>
+        student.status === 'qualified' || student.status === 'absent'
     );
-    return Object.values(qualified1).filter(student => 
+    return Object.values(qualified1).filter(student =>
         student.subjects[subject]
     ).length;
 }
 
 function studentsAttendedSubjectCounter(subject) {
-    return Object.values(cleanData).filter(student => 
-        student.status === 'qualified' && 
+    return Object.values(cleanData).filter(student =>
+        student.status === 'qualified' &&
         student.subjects[subject]
     ).length;
 }
@@ -777,7 +801,7 @@ function gpaToGrade(gpa) {
 // Render section summary table
 function renderSectionSummary() {
     const tbody = document.getElementById('sectionSummaryBody');
-    const summarySection = document.querySelector('.summary-section'); 
+    const summarySection = document.querySelector('.summary-section');
     tbody.innerHTML = '';
 
     const allStudents = Object.values(cleanData);
@@ -785,8 +809,8 @@ function renderSectionSummary() {
     function buildRow(label, students) {
         const qualified = students.filter(s => s.status === 'qualified' || s.status === 'absent');
         const attended = students.filter(s => s.status === 'qualified');
-        const passed = attended.filter(s => gpaToGrade(s.gpa) !== 'F');
-        const failedOverall = attended.filter(s => gpaToGrade(s.gpa) === 'F');
+        const passed = attended.filter(s => gpaToGrade(getGpaForAnalytics(s)) !== 'F');
+        const failedOverall = attended.filter(s => gpaToGrade(getGpaForAnalytics(s)) === 'F');
 
         const tr = document.createElement('tr');
 
@@ -808,12 +832,12 @@ function renderSectionSummary() {
             notAttended,      // Not Attended
             passed.length,          // Passed
             failedOverall.length,   // Failed
-            attended.filter(s => gpaToGrade(s.gpa) === 'A+').length,
-            attended.filter(s => gpaToGrade(s.gpa) === 'A').length,
-            attended.filter(s => gpaToGrade(s.gpa) === 'A-').length,
-            attended.filter(s => gpaToGrade(s.gpa) === 'B').length,
-            attended.filter(s => gpaToGrade(s.gpa) === 'C').length,
-            attended.filter(s => gpaToGrade(s.gpa) === 'D').length,
+            attended.filter(s => gpaToGrade(getGpaForAnalytics(s)) === 'A+').length,
+            attended.filter(s => gpaToGrade(getGpaForAnalytics(s)) === 'A').length,
+            attended.filter(s => gpaToGrade(getGpaForAnalytics(s)) === 'A-').length,
+            attended.filter(s => gpaToGrade(getGpaForAnalytics(s)) === 'B').length,
+            attended.filter(s => gpaToGrade(getGpaForAnalytics(s)) === 'C').length,
+            attended.filter(s => gpaToGrade(getGpaForAnalytics(s)) === 'D').length,
             attended.filter(s => totalFailedCounter(s) === 1).length,
             attended.filter(s => totalFailedCounter(s) === 2).length,
             attended.filter(s => totalFailedCounter(s) === 3).length,
@@ -876,7 +900,7 @@ function renderSectionSummary() {
     )];
 
     if (sections.length === 0) {
-        summarySection.style.display = 'block'; 
+        summarySection.style.display = 'block';
         return;
     }
 
@@ -896,23 +920,23 @@ function renderSectionSummary() {
 function renderSubjectCards() {
     const container = document.getElementById('subjectCards');
     container.innerHTML = '';
-    
+
     allSubjects.forEach(subject => {
         const qualified = studentsQualifiedSubjectCounter(subject)
         const total = studentsAttendedSubjectCounter(subject);
-        const passed = Object.values(cleanData).filter(student => 
-            student.status === 'qualified' && 
-            student.subjects[subject] && 
+        const passed = Object.values(cleanData).filter(student =>
+            student.status === 'qualified' &&
+            student.subjects[subject] &&
             student.subjects[subject].grade !== 'F'
         ).length;
-        
+
         const passRate = total > 0 ? ((passed / total) * 100).toFixed(1) : 0;
-        
+
         const card = document.createElement('div');
         card.className = 'subject-card';
-        
+
         const subjectName = subject.charAt(0).toUpperCase() + subject.slice(1);
-        
+
         card.innerHTML = `
             <div class="card-header">
                 <div class="card-title">${subjectName}</div>
@@ -953,7 +977,7 @@ function renderSubjectCards() {
                 </div>
             </div>
         `;
-        
+
         container.appendChild(card);
     });
 }
